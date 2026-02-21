@@ -11,7 +11,7 @@ Adafruit_CCS811 ccs;
 
 void setup() {
 
-    // Intitialises serial communication
+    // Intitialises serial communication aaaa
     // between the Arduino and computer
     Serial.begin(9600);
     Serial.println("CCS811");
