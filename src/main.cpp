@@ -67,8 +67,8 @@ void loop(){
     Serial.print("Temperature: ");
     Serial.print(DHT_22_Temperature);
     Serial.println("°C");
-        // Continuosly print out both TVOC and CO2 readings
 
+    // Continuosly print out both TVOC and CO2 readings
     Serial.print("CO2: ");
     Serial.print(CCS811_CO2);
     Serial.print("ppm, TVOC: ");
