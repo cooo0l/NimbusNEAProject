@@ -1,10 +1,11 @@
-
+#define SCAN
+#ifndef SCAN
 
 /*
  * LAB Name: Arduino I2C Scanner
  * Author: Khaled Magdy
  * For More Info Visit: www.DeepBlueMbedded.com
- 
+ */
 #include <SPI.h>
 #include <Wire.h>
 #include <Arduino.h>
@@ -12,6 +13,7 @@ void setup()
 {
   Serial.begin(9600);
   Wire.begin();
+  Wire.setClock(100000);
 }
  
 void loop() 
@@ -49,4 +51,5 @@ void loop()
   delay(5000);           // wait 5 seconds for next scan
 }
 
-*/
+#endif
+
