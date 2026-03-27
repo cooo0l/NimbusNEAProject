@@ -21,22 +21,30 @@ void RotaryEncoder::begin() {
 void RotaryEncoder::update() {
     int currentCLK = digitalRead(CLK);
 
-    // Detect a change on CLK
-    if (currentCLK != lastCLK) {
-        // Determine direction by comparing DT with CLK
-        if (digitalRead(DT) != currentCLK) {
-            delta++;
-        } else {
-            delta--;
+    // Only count the falling edge to reduce duplicate steps
+    // Only check 5ms after previous reading to reduce noise
+    if (lastCLK == HIGH && currentCLK == LOW) {
+        unsigned long now = millis();
+        if (now - lastTurnTime > 5) {
+            if (digitalRead(DT) == HIGH) {
+                delta++;
+            } else {
+                delta--;
+            }
+            lastTurnTime = now;
         }
     }
 
     lastCLK = currentCLK;
 
-    // Button press detection
+    // Detect a button press once and ignore switch bounce.
     bool currentButtonState = digitalRead(SW);
     if (lastSW == HIGH && currentButtonState == LOW) {
-        pressed = true;
+        unsigned long now = millis();
+        if (now - lastButtonTime > 50) {
+            pressed = true;
+            lastButtonTime = now;
+        }
     }
     lastSW = currentButtonState;
 }

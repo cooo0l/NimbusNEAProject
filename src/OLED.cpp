@@ -1,39 +1,76 @@
-// --- Preprocessor directive to turn on and off compilation of this file
-
-#define OLED
-#ifndef OLED
-
-// SPI protocol being used
+#include "OLED.h"
 #include <SPI.h>
-// These control communication and drawing to the board respectively
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_GFX.h>
 
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 64
+OLED::OLED(uint8_t dc, uint8_t reset, uint8_t cs)
+    : display(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI, dc, reset, cs) {}
 
-#define OLED_DC     9
-#define OLED_CS     10
-#define OLED_RESET  8
+bool OLED::begin() {
+    if (!display.begin(SSD1306_SWITCHCAPVCC)) {
+        return false;
+    }
 
-// Instance of OLED display object
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &SPI, OLED_DC, OLED_RESET, OLED_CS);
-
-void setup() {
-  if (!display.begin(SSD1306_SWITCHCAPVCC)) { // Stop if display fails
-    Serial.println("ERROR: OLED screen failed to start"); 
-    while (true); 
-  }
-
-  display.clearDisplay(); 
-  display.setTextSize(1);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 20);
-  display.println("Hello World!");
-  display.display();
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.display();
+    return true;
 }
 
-void loop() {
+void OLED::clear() {
+    display.clearDisplay();
+    display.display();
 }
-#endif
- 
+
+void OLED::showLoading() {
+    display.clearDisplay();
+    display.setCursor(0, 20);
+    display.println("Loading...");
+    display.display();
+}
+
+void OLED::showSensorData(const SensorData& data) {
+    display.clearDisplay();
+
+    display.setCursor(10, 10);
+    display.println("CO2:");
+    display.setCursor(40, 10);
+    if (data.ccsValid) {
+        display.print(data.CO2);
+        display.println("PPM");
+    } else {
+        display.println("--");
+    }
+
+    display.setCursor(10, 24);
+    display.println("TVOC:");
+    display.setCursor(40, 24);
+    if (data.ccsValid) {
+        display.print(data.TVOC);
+        display.println("PPB");
+    } else {
+        display.println("--");
+    }
+
+    display.setCursor(10, 38);
+    display.println("HUM:");
+    display.setCursor(40, 38);
+    if (data.dhtValid) {
+        display.print(data.humidity);
+        display.println("%");
+    } else {
+        display.println("--");
+    }
+
+    display.setCursor(10, 52);
+    display.println("TEMP:");
+    display.setCursor(40, 52);
+    if (data.dhtValid) {
+        display.print(data.temperature);
+        display.print(char(247));
+        display.println("C");
+    } else {
+        display.println("--");
+    }
+
+    display.display();
+}
