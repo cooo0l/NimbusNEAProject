@@ -1,42 +1,54 @@
-//#define RE
-#ifndef RE
-#include <Arduino.h>
+#include "RotaryEncoder.h"
 
-// Defining pins
-#define CLK 2 // Rotation signal
-#define DT 3 // Direction signal
-#define SW 4 // Push button
+// Constructor for class RotaryEncoder, and initialise
+// class members with the constructor argument
+RotaryEncoder::RotaryEncoder(uint8_t clk, uint8_t dt, uint8_t sw)
+    : CLK(clk), DT(dt), SW(sw) {}
 
-// Stores prev state of CLK
-int lastCLK{};
-
-void setup() {
-    pinMode(CLK,INPUT_PULLUP);
-    pinMode(DT,INPUT_PULLUP);
+// Startup for the rotary encoder
+void RotaryEncoder::begin() {
+    pinMode(CLK, INPUT_PULLUP);
+    pinMode(DT, INPUT_PULLUP);
     pinMode(SW, INPUT_PULLUP);
 
-    Serial.begin(9600);
-
-    lastCLK = digitalRead(CLK); // Captures current state of CLK
+    // Stores previous state of CLK
+    // and SW now
+    lastCLK = digitalRead(CLK);
+    lastSW = digitalRead(SW);
 }
 
-void loop() {
-  int currentCLK = digitalRead(CLK); // Gets the current signal level
+// Detecting input
+void RotaryEncoder::update() {
+    int currentCLK = digitalRead(CLK);
 
-  if (currentCLK != lastCLK) { // Checks if there's a change
-    if (digitalRead(DT) != currentCLK) { // Checks the direction
-      Serial.println("Clockwise");
-    } else {
-      Serial.println("Anticlockwise");
+    // Detect a change on CLK
+    if (currentCLK != lastCLK) {
+        // Determine direction by comparing DT with CLK
+        if (digitalRead(DT) != currentCLK) {
+            delta++;
+        } else {
+            delta--;
+        }
     }
-  }
 
-  lastCLK = currentCLK; // Updates the last state for next loop
+    lastCLK = currentCLK;
 
-  if (digitalRead(SW) == LOW) { // When pressed SW is low
-    Serial.println("Button Pressed");
-    delay(200); // basic debounce
-  }
+    // Button press detection
+    bool currentButtonState = digitalRead(SW);
+    if (lastSW == HIGH && currentButtonState == LOW) {
+        pressed = true;
+    }
+    lastSW = currentButtonState;
 }
-
-#endif
+// Returns the rotation amount
+int RotaryEncoder::getDelta() {
+    int result = delta;
+    delta = 0;
+    return result;
+}
+// Returns if button was pressed
+bool RotaryEncoder::wasPressed() {
+    bool result = pressed;
+    pressed = false;
+    return result;
+}
