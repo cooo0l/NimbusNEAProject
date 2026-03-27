@@ -1,4 +1,4 @@
-//#define MAIN
+#define MAIN
 #ifndef MAIN
 
 #include <Arduino.h>
@@ -87,14 +87,26 @@ void loop(){
     display.clearDisplay(); 
     // Set cursor to desired postion in pixels (where 0,0 is top left)
     display.setCursor(10, 10);
-    display.println(CCS811_CO2);
+    display.println("CO2:");
+    display.setCursor(40, 10);
+    display.print(CCS811_CO2);
+    display.println("PPM");
     display.setCursor(10, 24);
-    display.println(CCS811_TVOC);
+    display.println("TVOC:"); 
+    display.setCursor(40, 24);
+    display.print(CCS811_TVOC);
+    display.println("PPB");
     display.setCursor(10, 38);
-    display.println(DHT_22_Humidity);
+    display.println("HUM:");
+    display.setCursor(40, 38);
+    display.print(DHT_22_Humidity);
+    display.println("%");
     display.setCursor(10, 52);
-    display.println(DHT_22_Temperature);
-
+    display.println("TEMP:");
+    display.setCursor(40, 52);
+    display.print(DHT_22_Temperature);
+    display.print(char(247));
+    display.println("C");
     display.display();
 
     delay(5000);
