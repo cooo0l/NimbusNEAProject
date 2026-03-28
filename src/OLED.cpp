@@ -21,56 +21,32 @@ void OLED::clear() {
     display.display();
 }
 
-void OLED::showLoading() {
+void OLED::clearBuffer() {
     display.clearDisplay();
-    display.setCursor(0, 20);
-    display.println("Loading...");
-    display.display();
 }
 
-void OLED::showSensorData(const SensorData& data) {
-    display.clearDisplay();
-
-    display.setCursor(10, 10);
-    display.println("CO2:");
-    display.setCursor(40, 10);
-    if (data.ccsValid) {
-        display.print(data.CO2);
-        display.println("PPM");
-    } else {
-        display.println("--");
-    }
-
-    display.setCursor(10, 24);
-    display.println("TVOC:");
-    display.setCursor(40, 24);
-    if (data.ccsValid) {
-        display.print(data.TVOC);
-        display.println("PPB");
-    } else {
-        display.println("--");
-    }
-
-    display.setCursor(10, 38);
-    display.println("HUM:");
-    display.setCursor(40, 38);
-    if (data.dhtValid) {
-        display.print(data.humidity);
-        display.println("%");
-    } else {
-        display.println("--");
-    }
-
-    display.setCursor(10, 52);
-    display.println("TEMP:");
-    display.setCursor(40, 52);
-    if (data.dhtValid) {
-        display.print(data.temperature);
-        display.print(char(247));
-        display.println("C");
-    } else {
-        display.println("--");
-    }
-
+void OLED::present() {
     display.display();
 }
+// Prints text
+void OLED::drawText(int16_t x, int16_t y, const char* text) {
+    display.setCursor(x, y);
+    display.print(text);
+}
+// Prints readings with int value to screen
+void OLED::drawValueWithUnit(int16_t x, int16_t y, uint16_t value, const char* unit) {
+    display.setCursor(x, y);
+    display.print(value);
+    display.print(unit);
+}
+// Prints readings with float value to screen
+void OLED::drawFloatWithUnit(int16_t x, int16_t y, float value, const char* unit,
+                             uint8_t decimals, bool prependDegreeSymbol) {
+    display.setCursor(x, y);
+    display.print(value, decimals);
+    if (prependDegreeSymbol) {
+        display.write(247);
+    }
+    display.print(unit);
+}
+
