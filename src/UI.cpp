@@ -1,5 +1,4 @@
 #include "UI.h"
-#include <stdio.h>
 
 UI::UI(OLED& display)
     : display(display) {}
@@ -22,28 +21,16 @@ void UI::updateSensorData(const SensorData& data) {
 }
 
 void UI::moveSelection(int delta) {
-    if (delta == 0) {
+    if (currentScreen != Screen::MainMenu || delta == 0) {
         return;
     }
 
-    if (currentScreen == Screen::MainMenu) {
-        int nextIndex = static_cast<int>(selectedMenuIndex) + delta;
-        while (nextIndex < 0) {
-            nextIndex += MENU_ITEM_COUNT;
-        }
-        selectedMenuIndex = static_cast<uint8_t>(nextIndex % MENU_ITEM_COUNT);
-        renderCurrentScreen();
-        return;
+    int nextIndex = static_cast<int>(selectedMenuIndex) + delta;
+    while (nextIndex < 0) {
+        nextIndex += MENU_ITEM_COUNT;
     }
-
-    if (currentScreen == Screen::Settings) {
-        int nextIndex = static_cast<int>(selectedSettingsItem) + delta;
-        while (nextIndex < 0) {
-            nextIndex += SETTINGS_ITEM_COUNT;
-        }
-        selectedSettingsItem = static_cast<uint8_t>(nextIndex % SETTINGS_ITEM_COUNT);
-        renderCurrentScreen();
-    }
+    selectedMenuIndex = static_cast<uint8_t>(nextIndex % MENU_ITEM_COUNT);
+    renderCurrentScreen();
 }
 
 void UI::select() {
@@ -53,25 +40,13 @@ void UI::select() {
             currentScreen = Screen::SensorData;
             break;
         case 1:
+            currentScreen = Screen::ExportData;
+            break;
+        case 2:
             currentScreen = Screen::Settings;
             break;
         default:
             currentScreen = Screen::MainMenu;
-            break;
-        }
-    } else if (currentScreen == Screen::Settings) {
-        switch (selectedSettingsItem) {
-        case 0:
-            exportFormat = exportFormat == ExportFormat::Json ? ExportFormat::Csv
-                                                              : ExportFormat::Json;
-            break;
-        case 1:
-            logReadingsEnabled = !logReadingsEnabled;
-            break;
-        case 2:
-            currentScreen = Screen::MainMenu;
-            break;
-        default:
             break;
         }
     } else {
@@ -92,14 +67,6 @@ Screen UI::getCurrentScreen() const {
     return currentScreen;
 }
 
-ExportFormat UI::getExportFormat() const {
-    return exportFormat;
-}
-
-bool UI::isLoggingEnabled() const {
-    return logReadingsEnabled;
-}
-
 void UI::renderLoading() {
     display.clearBuffer();
     display.drawText(0, 20, "Loading...");
@@ -109,6 +76,7 @@ void UI::renderLoading() {
 void UI::renderMainMenu() {
     static const char* const menuItems[MENU_ITEM_COUNT] = {
         "Live Data",
+        "Export Data",
         "Settings",
     };
 
@@ -158,38 +126,19 @@ void UI::renderSensorData() {
     display.present();
 }
 
-void UI::renderSettings() {
-    char percentText[8];
-    snprintf(percentText, sizeof(percentText), "%u%%", storagePercent);
-
-    const uint8_t barWidth = 68;
-    const uint8_t fillWidth = static_cast<uint8_t>((static_cast<uint16_t>(barWidth) *
-                                                    storagePercent) / 100);
-
+void UI::renderExportData() {
     display.clearBuffer();
+    display.drawText(0, 8, "Export Data");
+    display.drawText(0, 28, "Use Serial");
+    display.drawText(0, 42, "Press to return");
+    display.present();
+}
 
-    display.drawFrame(24, 0, 80, 16);
-    display.drawText(31, 12, "Data & Storage");
-    display.drawText(54, 24, percentText);
-    display.drawText(4, 34, "Empty");
-    display.drawText(103, 34, "Full");
-    display.drawFrame(30, 28, barWidth, 8);
-    display.drawBox(30, 28, fillWidth, 8);
-
-    display.drawText(selectedSettingsItem == 0 ? 0 : 4, 46,
-                     selectedSettingsItem == 0 ? ">" : " ");
-    display.drawText(8, 46, "Export:");
-    display.drawText(48, 46, exportFormat == ExportFormat::Json ? "JSON" : "CSV");
-
-    display.drawText(selectedSettingsItem == 1 ? 0 : 4, 56,
-                     selectedSettingsItem == 1 ? ">" : " ");
-    display.drawText(8, 56, "Log:");
-    display.drawText(48, 56, logReadingsEnabled ? "On" : "Off");
-
-    display.drawText(selectedSettingsItem == 2 ? 0 : 4, 63,
-                     selectedSettingsItem == 2 ? ">" : " ");
-    display.drawText(8, 63, "Back");
-
+void UI::renderSettings() {
+    display.clearBuffer();
+    display.drawText(0, 8, "Settings");
+    display.drawText(0, 28, "Coming soon");
+    display.drawText(0, 42, "Press to return");
     display.present();
 }
 
@@ -203,6 +152,9 @@ void UI::renderCurrentScreen() {
         break;
     case Screen::SensorData:
         renderSensorData();
+        break;
+    case Screen::ExportData:
+        renderExportData();
         break;
     case Screen::Settings:
         renderSettings();
