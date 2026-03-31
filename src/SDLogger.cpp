@@ -7,7 +7,6 @@ const char JSON_FILE[] = "readings.txt";
 }
 
 bool SDLogger::begin(uint8_t chipSelectPin) {
-    this->chipSelectPin = chipSelectPin;
     pinMode(chipSelectPin, OUTPUT);
     digitalWrite(chipSelectPin, HIGH);
 

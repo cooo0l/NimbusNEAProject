@@ -1,5 +1,4 @@
 #include "UI.h"
-#include <stdio.h>
 
 UI::UI(OLED& display)
     : display(display) {}
@@ -81,13 +80,6 @@ void UI::select() {
     renderCurrentScreen();
 }
 
-void UI::back() {
-    if (currentScreen != Screen::MainMenu) {
-        currentScreen = Screen::MainMenu;
-        renderCurrentScreen();
-    }
-}
-
 Screen UI::getCurrentScreen() const {
     return currentScreen;
 }
@@ -101,96 +93,84 @@ bool UI::isLoggingEnabled() const {
 }
 
 void UI::renderLoading() {
-    display.clearBuffer();
-    display.drawText(0, 20, "Loading...");
-    display.present();
+    display.firstPage();
+    do {
+        display.drawText(0, 20, "Loading...");
+    } while (display.nextPage());
 }
 
 void UI::renderMainMenu() {
-    static const char* const menuItems[MENU_ITEM_COUNT] = {
-        "Live Data",
-        "Settings",
-    };
-
-    display.clearBuffer();
-    display.drawText(0, 8, "Main Menu");
-
-    for (uint8_t i = 0; i < MENU_ITEM_COUNT; ++i) {
-        const int16_t y = 22 + (i * 14);
-        display.drawText(0, y, i == selectedMenuIndex ? ">" : " ");
-        display.drawText(10, y, menuItems[i]);
-    }
-
-    display.present();
+    display.firstPage();
+    do {
+        display.drawText(0, 8, "Main Menu");
+        display.drawText(0, 22, selectedMenuIndex == 0 ? "> Live Data" : "  Live Data");
+        display.drawText(0, 36, selectedMenuIndex == 1 ? "> Settings" : "  Settings");
+    } while (display.nextPage());
 }
 
 void UI::renderSensorData() {
-    display.clearBuffer();
+    display.firstPage();
+    do {
+        display.drawText(10, 10, "CO2:");
+        if (currentData.ccsValid) {
+            display.drawValueWithUnit(40, 10, currentData.CO2, "PPM");
+        } else {
+            display.drawText(40, 10, "--");
+        }
 
-    display.drawText(10, 10, "CO2:");
-    if (currentData.ccsValid) {
-        display.drawValueWithUnit(40, 10, currentData.CO2, "PPM");
-    } else {
-        display.drawText(40, 10, "--");
-    }
+        display.drawText(10, 24, "TVOC:");
+        if (currentData.ccsValid) {
+            display.drawValueWithUnit(40, 24, currentData.TVOC, "PPB");
+        } else {
+            display.drawText(40, 24, "--");
+        }
 
-    display.drawText(10, 24, "TVOC:");
-    if (currentData.ccsValid) {
-        display.drawValueWithUnit(40, 24, currentData.TVOC, "PPB");
-    } else {
-        display.drawText(40, 24, "--");
-    }
+        display.drawText(10, 38, "HUM:");
+        if (currentData.dhtValid) {
+            display.drawFloatWithUnit(40, 38, currentData.humidity, "%", 1);
+        } else {
+            display.drawText(40, 38, "--");
+        }
 
-    display.drawText(10, 38, "HUM:");
-    if (currentData.dhtValid) {
-        display.drawFloatWithUnit(40, 38, currentData.humidity, "%", 1);
-    } else {
-        display.drawText(40, 38, "--");
-    }
-
-    display.drawText(10, 52, "TEMP:");
-    if (currentData.dhtValid) {
-        display.drawFloatWithUnit(40, 52, currentData.temperature, "C", 1, true);
-    } else {
-        display.drawText(40, 52, "--");
-    }
-
-    display.present();
+        display.drawText(10, 52, "TEMP:");
+        if (currentData.dhtValid) {
+            display.drawFloatWithUnit(40, 52, currentData.temperature, "C", 1, true);
+        } else {
+            display.drawText(40, 52, "--");
+        }
+    } while (display.nextPage());
 }
 
 void UI::renderSettings() {
-    char percentText[8];
-    snprintf(percentText, sizeof(percentText), "%u%%", storagePercent);
-
     const uint8_t barWidth = 68;
-    const uint8_t fillWidth = static_cast<uint8_t>((static_cast<uint16_t>(barWidth) *
-                                                    storagePercent) / 100);
+    const uint8_t fillWidth = 40;
 
-    display.clearBuffer();
+    display.firstPage();
+    do {
+        display.drawFrame(24, 0, 80, 16);
+        display.drawText(31, 12, "Data & Storage");
+        display.drawText(54, 24, "60%");
+        display.drawText(4, 34, "Empty");
+        display.drawText(103, 34, "Full");
+        display.drawFrame(30, 28, barWidth, 8);
+        display.drawBox(30, 28, fillWidth, 8);
 
-    display.drawFrame(24, 0, 80, 16);
-    display.drawText(31, 12, "Data & Storage");
-    display.drawText(54, 24, percentText);
-    display.drawText(4, 34, "Empty");
-    display.drawText(103, 34, "Full");
-    display.drawFrame(30, 28, barWidth, 8);
-    display.drawBox(30, 28, fillWidth, 8);
+        if (selectedSettingsItem == 0) {
+            display.drawText(0, 46, exportFormat == ExportFormat::Json ? "> Export: JSON"
+                                                                        : "> Export: CSV");
+        } else {
+            display.drawText(0, 46, exportFormat == ExportFormat::Json ? "  Export: JSON"
+                                                                        : "  Export: CSV");
+        }
 
-    display.drawText(selectedSettingsItem == 0 ? 0 : 4, 46,
-                     selectedSettingsItem == 0 ? ">" : " ");
-    display.drawText(8, 46, "Export:");
-    display.drawText(48, 46, exportFormat == ExportFormat::Json ? "JSON" : "CSV");
+        if (selectedSettingsItem == 1) {
+            display.drawText(0, 56, logReadingsEnabled ? "> Log: On" : "> Log: Off");
+        } else {
+            display.drawText(0, 56, logReadingsEnabled ? "  Log: On" : "  Log: Off");
+        }
 
-    display.drawText(selectedSettingsItem == 1 ? 0 : 4, 56,
-                     selectedSettingsItem == 1 ? ">" : " ");
-    display.drawText(8, 56, "Log:");
-    display.drawText(48, 56, logReadingsEnabled ? "On" : "Off");
-
-    display.drawText(selectedSettingsItem == 2 ? 0 : 4, 63,
-                     selectedSettingsItem == 2 ? ">" : " ");
-    display.drawText(8, 63, "Back");
-
-    display.present();
+        display.drawText(0, 63, selectedSettingsItem == 2 ? "> Back" : "  Back");
+    } while (display.nextPage());
 }
 
 void UI::renderCurrentScreen() {

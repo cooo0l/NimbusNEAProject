@@ -5,14 +5,14 @@
 #include "SensorManager.h"
 
 // Stores all the possible states of OLED
-enum class Screen {
+enum class Screen : uint8_t {
     Loading,
     MainMenu,
     SensorData,
     Settings,
 };
 
-enum class ExportFormat {
+enum class ExportFormat : uint8_t {
     Json,
     Csv,
 };
@@ -26,7 +26,6 @@ public:
     void updateSensorData(const SensorData& data);
     void moveSelection(int delta);
     void select();
-    void back();
     Screen getCurrentScreen() const;
     ExportFormat getExportFormat() const;
     bool isLoggingEnabled() const;
@@ -48,5 +47,4 @@ private:
     uint8_t selectedSettingsItem = 0;
     ExportFormat exportFormat = ExportFormat::Json;
     bool logReadingsEnabled = false;
-    uint8_t storagePercent = 60;
 };

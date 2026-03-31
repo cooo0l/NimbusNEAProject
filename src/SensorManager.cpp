@@ -4,7 +4,7 @@
 #include <DHT.h>
 
 // DHT defines
-#define DHTPIN 7
+#define DHTPIN 32
 #define DHTTYPE DHT22
 
 // Instantiate library instances
@@ -17,7 +17,7 @@ void SensorManager::begin() {
     dht.begin();
 
     if (!ccs.begin()) {
-        Serial.println("CCS811 init failed"); // Error handling message
+        currentData.ccsValid = false;
     }
 }
 // Updates currentData using sensors
