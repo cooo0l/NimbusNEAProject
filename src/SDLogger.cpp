@@ -2,15 +2,21 @@
 #include <SD.h>
 
 namespace {
-const char CSV_FILE[] = "readings.csv";
-const char JSON_FILE[] = "readings.txt";
+const char CSV_FILE[] = "/readings.csv";
+const char JSON_FILE[] = "/readings.txt";
+constexpr uint8_t SD_SCK = 18;
+constexpr uint8_t SD_MISO = 19;
+constexpr uint8_t SD_MOSI = 23;
+constexpr uint32_t SD_SPI_HZ = 1000000;
 }
 
 bool SDLogger::begin(uint8_t chipSelectPin) {
+    this->chipSelectPin = chipSelectPin;
+    SPI.begin(SD_SCK, SD_MISO, SD_MOSI, chipSelectPin);
     pinMode(chipSelectPin, OUTPUT);
     digitalWrite(chipSelectPin, HIGH);
 
-    available = SD.begin(chipSelectPin);
+    available = SD.begin(chipSelectPin, SPI, SD_SPI_HZ);
     return available;
 }
 
@@ -25,7 +31,6 @@ bool SDLogger::log(unsigned long timestampMs, const SensorData& data, ExportForm
 
     return writeCsv(timestampMs, data);
 }
-
 bool SDLogger::isAvailable() const {
     return available;
 }
@@ -62,6 +67,7 @@ bool SDLogger::writeCsv(unsigned long timestampMs, const SensorData& data) {
     file.print(data.dhtValid ? 1 : 0);
     file.print(',');
     file.println(data.ccsValid ? 1 : 0);
+    file.flush();
     file.close();
     return true;
 }
@@ -103,10 +109,15 @@ bool SDLogger::writeJson(unsigned long timestampMs, const SensorData& data) {
     file.print(F(",\"ccsValid\":"));
     file.print(data.ccsValid ? F("true") : F("false"));
     file.println(F("}"));
+    file.flush();
     file.close();
     return true;
 }
 
 bool SDLogger::fileExists(const char* filename) const {
+    if (!available) {
+        return false;
+    }
+
     return SD.exists(filename);
 }

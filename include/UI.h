@@ -24,6 +24,7 @@ public:
     void begin();
     void showLoading();
     void updateSensorData(const SensorData& data);
+    void updateStorageStatus(bool sdAvailable, bool writeAttempted, bool lastWriteOk);
     void moveSelection(int delta);
     void select();
     Screen getCurrentScreen() const;
@@ -46,5 +47,8 @@ private:
     uint8_t selectedMenuIndex = 0;
     uint8_t selectedSettingsItem = 0;
     ExportFormat exportFormat = ExportFormat::Json;
-    bool logReadingsEnabled = false;
+    bool logReadingsEnabled = true;
+    bool sdAvailable = false;
+    bool writeAttempted = false;
+    bool lastWriteOk = false;
 };

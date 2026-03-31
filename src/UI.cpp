@@ -20,6 +20,15 @@ void UI::updateSensorData(const SensorData& data) {
     }
 }
 
+void UI::updateStorageStatus(bool sdAvailable, bool writeAttempted, bool lastWriteOk) {
+    this->sdAvailable = sdAvailable;
+    this->writeAttempted = writeAttempted;
+    this->lastWriteOk = lastWriteOk;
+    if (currentScreen == Screen::Settings) {
+        renderCurrentScreen();
+    }
+}
+
 void UI::moveSelection(int delta) {
     if (delta == 0) {
         return;
@@ -154,22 +163,28 @@ void UI::renderSettings() {
         display.drawText(103, 34, "Full");
         display.drawFrame(30, 28, barWidth, 8);
         display.drawBox(30, 28, fillWidth, 8);
+        display.drawText(0, 42, sdAvailable ? "SD: Ready" : "SD: Missing");
 
         if (selectedSettingsItem == 0) {
-            display.drawText(0, 46, exportFormat == ExportFormat::Json ? "> Export: JSON"
+            display.drawText(0, 50, exportFormat == ExportFormat::Json ? "> Export: JSON"
                                                                         : "> Export: CSV");
         } else {
-            display.drawText(0, 46, exportFormat == ExportFormat::Json ? "  Export: JSON"
+            display.drawText(0, 50, exportFormat == ExportFormat::Json ? "  Export: JSON"
                                                                         : "  Export: CSV");
         }
 
         if (selectedSettingsItem == 1) {
-            display.drawText(0, 56, logReadingsEnabled ? "> Log: On" : "> Log: Off");
+            display.drawText(0, 58, logReadingsEnabled ? "> Log: On" : "> Log: Off");
         } else {
-            display.drawText(0, 56, logReadingsEnabled ? "  Log: On" : "  Log: Off");
+            display.drawText(0, 58, logReadingsEnabled ? "  Log: On" : "  Log: Off");
         }
 
-        display.drawText(0, 63, selectedSettingsItem == 2 ? "> Back" : "  Back");
+        if (!writeAttempted) {
+            display.drawText(72, 58, "W:--");
+        } else {
+            display.drawText(72, 58, lastWriteOk ? "W:OK" : "W:FAIL");
+        }
+        display.drawText(0, 64, selectedSettingsItem == 2 ? "> Back" : "  Back");
     } while (display.nextPage());
 }
 
