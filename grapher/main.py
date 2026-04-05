@@ -1,9 +1,10 @@
 from pathlib import Path
+# tkinter is responsible for handling GUI
 from tkinter import Tk, filedialog
-
+# Importing the appropriate classes and functions
 from loader import LoaderError, loadData
 
-
+# This opens a file dialog for the user
 def choose_file() -> Path | None:
     root = Tk()
     root.withdraw()
@@ -41,7 +42,6 @@ def main() -> None:
         return
 
     print(f"Loaded {len(records)} record(s) from {selected_file.name}.")
-
-
-if __name__ == "__main__":
-    main()
+    
+#main call
+main()
