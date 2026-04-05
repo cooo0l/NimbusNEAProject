@@ -1,29 +1,47 @@
-# For handling CSV files
-import csv
-# For formatting dates
-from datetime import datetime
-# For plotting a graph
-import matplotlib.pyplot as plt
+from pathlib import Path
+from tkinter import Tk, filedialog
 
-# Two lists for storing the results of the CSV file to plot
-timestamps = []
-co2_values = []
+from loader import LoaderError, loadData
 
-# Open the csv file using the file path
-with open(r"C:\Users\kazbe\Documents\PlatformIO\Projects\NimbusNEAProject\grapher\testData.csv", newline="") as file:
-    # Extract data from the CSV
-    reader = csv.DictReader(file)
 
-    # Iterate through each header, if it's CO2 append
-    # the CO2 data and the formatted timestamp to lists
-    for row in reader:
-        if row["sensor"] == "CO2":
-            timestamps.append(datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S"))
-            co2_values.append(float(row["value"]))
-# Labeling and plotting
+def choose_file() -> Path | None:
+    root = Tk()
+    root.withdraw()
 
-plt.plot(timestamps, co2_values)
-plt.xlabel("Time")
-plt.ylabel("CO2 (ppm)")
-plt.title("CO2 Levels Over Time")
-plt.show()
+    file_path = filedialog.askopenfilename(
+        title="Select a sensor export file",
+        filetypes=[
+            ("Sensor exports", "*.csv *.json *.txt"),
+            ("All files", "*.*"),
+        ],
+    )
+
+    root.destroy()
+
+    if not file_path:
+        return None
+
+    return Path(file_path)
+
+
+def main() -> None:
+    selected_file = choose_file()
+
+    if selected_file is None:
+        print("No file was selected.")
+        return
+
+    try:
+        records = loadData(selected_file)
+    except FileNotFoundError:
+        print(f"File not found: {selected_file}")
+        return
+    except LoaderError as error:
+        print(f"Import failed: {error}")
+        return
+
+    print(f"Loaded {len(records)} record(s) from {selected_file.name}.")
+
+
+if __name__ == "__main__":
+    main()

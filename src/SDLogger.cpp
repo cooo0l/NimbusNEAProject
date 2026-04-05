@@ -37,7 +37,7 @@ bool SDLogger::isAvailable() const {
 
 bool SDLogger::writeCsv(unsigned long timestampMs, const SensorData& data) {
     const bool needsHeader = !fileExists(CSV_FILE);
-    File file = SD.open(CSV_FILE, FILE_WRITE);
+    File file = SD.open(CSV_FILE, FILE_APPEND);
     if (!file) {
         return false;
     }
@@ -73,7 +73,7 @@ bool SDLogger::writeCsv(unsigned long timestampMs, const SensorData& data) {
 }
 
 bool SDLogger::writeJson(unsigned long timestampMs, const SensorData& data) {
-    File file = SD.open(JSON_FILE, FILE_WRITE);
+    File file = SD.open(JSON_FILE, FILE_APPEND);
     if (!file) {
         return false;
     }
