@@ -3,6 +3,8 @@ from pathlib import Path
 from tkinter import Tk, filedialog
 # Importing the appropriate classes and functions
 from loader import LoaderError, loadData
+from analysis import getValidPercentages, summariseAllMetrics
+from validate import validateRecords
 
 # This opens a file dialog for the user
 def choose_file() -> Path | None:
@@ -42,6 +44,27 @@ def main() -> None:
         return
 
     print(f"Loaded {len(records)} record(s) from {selected_file.name}.")
-    
-#main call
-main()
+
+    validation_issues = validateRecords(records)
+    if validation_issues:
+        print("Validation found the following issue(s):")
+        for issue in validation_issues:
+            print(f"- {issue}")
+    else:
+        print("Validation passed.")
+
+    percentages = getValidPercentages(records)
+    print(f"DHT valid: {percentages['dht_valid_percentage']:.1f}%")
+    print(f"CCS valid: {percentages['ccs_valid_percentage']:.1f}%")
+    print("Metric summaries:")
+
+    for summary in summariseAllMetrics(records):
+        print(f"- {summary.label}")
+        print(
+            f"  count={summary.count}, min={summary.minimum}, max={summary.maximum}, "
+            f"mean={summary.mean:.2f}, median={summary.median:.2f}, range={summary.range:.2f}"
+        )
+
+
+if __name__ == "__main__":
+    main()

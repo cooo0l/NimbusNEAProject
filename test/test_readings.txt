@@ -1,0 +1,10 @@
+{"time_ms":0,"temperature":21.4,"humidity":46.2,"co2":612,"tvoc":14,"dhtValid":true,"ccsValid":true}
+{"time_ms":5000,"temperature":21.4,"humidity":46.1,"co2":618,"tvoc":15,"dhtValid":true,"ccsValid":true}
+{"time_ms":10000,"temperature":21.5,"humidity":46.0,"co2":625,"tvoc":17,"dhtValid":true,"ccsValid":true}
+{"time_ms":15000,"temperature":21.5,"humidity":45.9,"co2":639,"tvoc":19,"dhtValid":true,"ccsValid":true}
+{"time_ms":20000,"temperature":21.6,"humidity":45.8,"co2":654,"tvoc":21,"dhtValid":true,"ccsValid":true}
+{"time_ms":25000,"temperature":21.7,"humidity":45.7,"co2":null,"tvoc":null,"dhtValid":true,"ccsValid":false}
+{"time_ms":30000,"temperature":null,"humidity":null,"co2":682,"tvoc":24,"dhtValid":false,"ccsValid":true}
+{"time_ms":35000,"temperature":21.8,"humidity":45.6,"co2":701,"tvoc":27,"dhtValid":true,"ccsValid":true}
+{"time_ms":40000,"temperature":21.8,"humidity":45.5,"co2":715,"tvoc":29,"dhtValid":true,"ccsValid":true}
+{"time_ms":45000,"temperature":21.9,"humidity":45.3,"co2":728,"tvoc":31,"dhtValid":true,"ccsValid":true}

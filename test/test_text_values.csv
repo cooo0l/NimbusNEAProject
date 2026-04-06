@@ -1,0 +1,4 @@
+time_ms,temp_c,humidity_pct,co2_ppm,tvoc_ppb,dht_valid,ccs_valid
+0,21.4,46.2,612,14,1,1
+5000,warm,45.9,high,15,1,1
+10000,21.6,humid,630,loud,1,1
