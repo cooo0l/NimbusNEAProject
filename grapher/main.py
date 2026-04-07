@@ -1,9 +1,11 @@
 from pathlib import Path
 # tkinter is responsible for handling GUI
 from tkinter import Tk, filedialog
+import matplotlib.pyplot as plt
 # Importing the appropriate classes and functions
 from loader import LoaderError, loadData
 from analysis import getValidPercentages, summariseAllMetrics
+from plotter import plotMetrics
 from validate import validateRecords
 
 # This opens a file dialog for the user
@@ -64,6 +66,12 @@ def main() -> None:
             f"  count={summary.count}, min={summary.minimum}, max={summary.maximum}, "
             f"mean={summary.mean:.2f}, median={summary.median:.2f}, range={summary.range:.2f}"
         )
+
+    try:
+        plotMetrics(records, ["co2_ppm", "tvoc_ppb","temp_c","humidity_pct"], time_unit="minutes")
+        plt.show()
+    except ValueError as error:
+        print(f"Plotting skipped: {error}")
 
 
 if __name__ == "__main__":
