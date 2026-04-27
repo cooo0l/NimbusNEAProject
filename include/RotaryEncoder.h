@@ -21,6 +21,7 @@ private:
     int delta = 0;
     bool pressed = false;
     bool lastSW = HIGH;
+    bool buttonArmed = true;
     unsigned long lastTurnTime = 0;
     unsigned long lastButtonTime = 0;
 };

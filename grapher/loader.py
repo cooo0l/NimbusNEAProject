@@ -81,7 +81,6 @@ def loadData(path: str | Path) -> list[SensorRecord]:
 
 # Loads and parses a CSV file, takes a path as input and outputs
 # a list of records in the format required by SensorRecord 
-
 def loadCsv(path: str | Path) -> list[SensorRecord]:
     file_path = Path(path)
 

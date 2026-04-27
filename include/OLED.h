@@ -12,6 +12,7 @@ public:
     void clear();
     void firstPage();
     bool nextPage();
+    void setBrightness(uint8_t percent);
     void drawText(int16_t x, int16_t y, const char* text);
     void drawValueWithUnit(int16_t x, int16_t y, uint16_t value, const char* unit);
     void drawFloatWithUnit(int16_t x, int16_t y, float value, const char* unit,
@@ -20,4 +21,7 @@ public:
     void drawBox(int16_t x, int16_t y, uint8_t width, uint8_t height);
 
     U8G2_SSD1306_128X64_NONAME_1_4W_HW_SPI display;
+
+private:
+    uint8_t contrast = 191;
 };

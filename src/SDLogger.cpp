@@ -19,7 +19,8 @@ bool SDLogger::begin(uint8_t chipSelectPin) {
     available = SD.begin(chipSelectPin, SPI, SD_SPI_HZ);
     return available;
 }
-
+// Takes in data, timestamp and file format, and calls
+// the appropriate logging function
 bool SDLogger::log(unsigned long timestampMs, const SensorData& data, ExportFormat format) {
     if (!available) {
         return false;
@@ -31,14 +32,15 @@ bool SDLogger::log(unsigned long timestampMs, const SensorData& data, ExportForm
 
     return writeCsv(timestampMs, data);
 }
+// Returns if sd logging is available
 bool SDLogger::isAvailable() const {
     return available;
 }
-
+// Writes a CSV record to the SD card
 bool SDLogger::writeCsv(unsigned long timestampMs, const SensorData& data) {
-    const bool needsHeader = !fileExists(CSV_FILE);
-    File file = SD.open(CSV_FILE, FILE_APPEND);
-    if (!file) {
+    const bool needsHeader = !fileExists(CSV_FILE); 
+    File file = SD.open(CSV_FILE, FILE_APPEND); 
+    if (!file) { 
         return false;
     }
 
@@ -46,32 +48,32 @@ bool SDLogger::writeCsv(unsigned long timestampMs, const SensorData& data) {
         file.println(F("time_ms,temp_c,humidity_pct,co2_ppm,tvoc_ppb,dht_valid,ccs_valid"));
     }
 
-    file.print(timestampMs);
-    file.print(',');
-    if (data.dhtValid) {
+    file.print(timestampMs); 
+    file.print(','); 
+    if (data.dhtValid) { 
         file.print(data.temperature, 1);
     }
-    file.print(',');
-    if (data.dhtValid) {
+    file.print(','); 
+    if (data.dhtValid) { 
         file.print(data.humidity, 1);
-    }
-    file.print(',');
-    if (data.ccsValid) {
+    } 
+    file.print(','); 
+    if (data.ccsValid) { 
         file.print(data.CO2);
-    }
-    file.print(',');
-    if (data.ccsValid) {
+    } 
+    file.print(','); 
+    if (data.ccsValid) { 
         file.print(data.TVOC);
-    }
-    file.print(',');
-    file.print(data.dhtValid ? 1 : 0);
-    file.print(',');
-    file.println(data.ccsValid ? 1 : 0);
+    } 
+    file.print(','); 
+    file.print(data.dhtValid ? 1 : 0); 
+    file.print(','); 
+    file.println(data.ccsValid ? 1 : 0); 
     file.flush();
     file.close();
     return true;
 }
-
+// Writes a JSON record to the SD card
 bool SDLogger::writeJson(unsigned long timestampMs, const SensorData& data) {
     File file = SD.open(JSON_FILE, FILE_APPEND);
     if (!file) {

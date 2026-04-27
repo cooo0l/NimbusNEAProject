@@ -32,9 +32,9 @@ class GrapherApp:
         self._buildLayout()
     # Builds the whole interface
     def _buildLayout(self) -> None:
+        # Creates the control menu on the left
         self.root.columnconfigure(1, weight=1) 
         self.root.rowconfigure(0, weight=1)
-
         controls = ttk.Frame(self.root, padding=12)
         controls.grid(row=0, column=0, sticky="ns")
         # Creates the area where the graph is

@@ -7,6 +7,7 @@ OLED::OLED(uint8_t dc, uint8_t reset, uint8_t cs)
 bool OLED::begin() {
     display.begin();
     display.setFont(u8g2_font_5x8_tf);
+    setBrightness(75);
     clear();
     return true;
 }
@@ -17,11 +18,20 @@ void OLED::clear() {
 }
 
 void OLED::firstPage() {
+    display.setContrast(contrast);
     display.firstPage();
 }
 
 bool OLED::nextPage() {
     return display.nextPage();
+}
+// Sets the brightness of the screen based on the percent selected
+void OLED::setBrightness(uint8_t percent) {
+    if (percent > 100) {
+        percent = 100;
+    }
+    contrast = uint8_t((uint16_t(percent) * 255U) / 100U);
+    display.setContrast(contrast);
 }
 
 void OLED::drawText(int16_t x, int16_t y, const char* text) {

@@ -37,15 +37,26 @@ void RotaryEncoder::update() {
 
     lastCLK = currentCLK;
 
-    // Detect a button press once and ignore switch bounce.
+    // Detect a single press and then ignore until the button is released.
     bool currentButtonState = digitalRead(SW);
-    if (lastSW == HIGH && currentButtonState == LOW) {
-        unsigned long now = millis();
+    unsigned long now = millis();
+
+    if (buttonArmed && lastSW == HIGH && currentButtonState == LOW) {
         if (now - lastButtonTime > 50) {
             pressed = true;
+            buttonArmed = false;
             lastButtonTime = now;
         }
     }
+
+    // Re-arm after a stable release.
+    if (!buttonArmed && lastSW == LOW && currentButtonState == HIGH) {
+        if (now - lastButtonTime > 50) {
+            buttonArmed = true;
+            lastButtonTime = now;
+        }
+    }
+
     lastSW = currentButtonState;
 }
 // Returns the rotation amount
