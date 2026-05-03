@@ -23,4 +23,7 @@ public:
 
 private:
     SensorData currentData;
+    bool ccsDetected = false;
+    unsigned long ccsStartupTimeMs = 0;
+    uint8_t ccsAddress = 0;
 };

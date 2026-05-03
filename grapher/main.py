@@ -8,4 +8,6 @@ def main() -> None:
     GrapherApp(root)
     root.mainloop()
 
-main()
+
+if __name__ == "__main__":
+    main()

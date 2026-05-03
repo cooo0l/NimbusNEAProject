@@ -11,6 +11,7 @@ enum class Screen : uint8_t {
     SensorData,
     Settings,
     DisplaySettings,
+    PowerSaving,
     ReadingInterval,
     DataAndStorage,
     Units
@@ -40,6 +41,20 @@ enum class DisplayMode : uint8_t {
     Summary,
     Numeric,
 };
+// Settings object, stores all settings
+struct UISettings {
+    uint8_t selectedSleepTimeoutIndex = 0;
+    uint8_t selectedIntervalIndex = 2;
+    uint8_t smoothingSampleCount = 5;
+    ExportFormat exportFormat = ExportFormat::Json;
+    DisplayMode displayMode = DisplayMode::Summary;
+    TemperatureUnit temperatureUnit = TemperatureUnit::Celsius;
+    HumidityUnit humidityUnit = HumidityUnit::Percent;
+    GasUnit co2Unit = GasUnit::Ppm;
+    GasUnit tvocUnit = GasUnit::Ppb;
+    bool logReadingsEnabled = true;
+    bool powerSavingEnabled = false;
+};
 // Decides which screen will appear
 class UI {
 public:
@@ -47,20 +62,28 @@ public:
 
     void begin();
     void showLoading();
+    void refresh();
     void updateSensorData(const SensorData& data);
-    void updateStorageStatus(bool sdAvailable, bool writeAttempted, bool lastWriteOk);
+    void updateStorageStatus(bool sdAvailable, bool writeAttempted, bool lastWriteOk,
+                             uint8_t storagePercent);
     void moveSelection(int delta);
     void select();
     Screen getCurrentScreen() const;
     ExportFormat getExportFormat() const;
     bool isLoggingEnabled() const;
+    bool isPowerSavingEnabled() const;
     unsigned long getReadingIntervalMs() const;
+    unsigned long getAutoSleepTimeoutMs() const;
     uint8_t getSmoothingSampleCount() const;
+    UISettings getSettings() const;
+    void applySettings(const UISettings& settings);
+    bool consumeSettingsChanged();
 
 private:
     static const uint8_t MENU_ITEM_COUNT = 2;
     static const uint8_t SETTINGS_ITEM_COUNT = 6;
     static const uint8_t DISPLAY_ITEM_COUNT = 3;
+    static const uint8_t POWER_ITEM_COUNT = 2;
     static const uint8_t INTERVAL_ITEM_COUNT = 3;
     static const uint8_t UNITS_ITEM_COUNT = 5;
     static const uint8_t DATA_STORAGE_ITEM_COUNT = 3;
@@ -70,6 +93,7 @@ private:
     void renderSensorData();
     void renderSettings();
     void renderDisplaySettings();
+    void renderPowerSaving();
     void renderReadingInterval();
     void renderDataAndStorage();
     void renderUnitSettings();
@@ -83,20 +107,23 @@ private:
     uint8_t selectedSettingsItem = 0;
     uint8_t selectedStorageItem = 0;
     uint8_t selectedDisplayItem = 0;
+    uint8_t selectedPowerItem = 0;
     uint8_t selectedIntervalItem = 0;
     uint8_t selectedUnitsItem = 0;
+    uint8_t selectedSleepTimeoutIndex = 0;
     uint8_t selectedIntervalIndex = 2;
     uint8_t smoothingSampleCount = 5;
-    uint8_t brightnessPercent = 75;
     ExportFormat exportFormat = ExportFormat::Json;
     DisplayMode displayMode = DisplayMode::Summary;
     TemperatureUnit temperatureUnit = TemperatureUnit::Celsius;
     HumidityUnit humidityUnit = HumidityUnit::Percent;
     GasUnit co2Unit = GasUnit::Ppm;
     GasUnit tvocUnit = GasUnit::Ppb;
-    bool adjustingBrightness = false;
     bool logReadingsEnabled = true;
+    bool powerSavingEnabled = false;
     bool sdAvailable = false;
     bool writeAttempted = false;
     bool lastWriteOk = false;
+    uint8_t storagePercent = 60;
+    bool settingsChanged = false;
 };

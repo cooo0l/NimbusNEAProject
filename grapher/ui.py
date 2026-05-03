@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
 from analysis import METRIC_NAMES, getValidPercentages, summariseAllMetrics
 from loader import LoaderError, SensorRecord, loadData
@@ -22,10 +23,13 @@ class GrapherApp:
         self.selected_file: Path | None = None
         # Stores the current graph
         self.current_canvas: FigureCanvasTkAgg | None = None
+        self.current_figure: Figure | None = None
 
         self.metric_var = tk.StringVar(value="co2_ppm")
         self.time_unit_var = tk.StringVar(value="minutes")
         self.smoothing_var = tk.IntVar(value=1)
+        self.start_time_var = tk.StringVar(value="")
+        self.end_time_var = tk.StringVar(value="")
         self.status_var = tk.StringVar(value="Choose a file to begin.")
         self.file_var = tk.StringVar(value="No file selected")
         # Method call to build the interface
@@ -75,23 +79,38 @@ class GrapherApp:
             textvariable=self.smoothing_var,
             width=8,
         ).grid(row=7, column=0, sticky="w", pady=(0, 12))
+        # Time filter controls, using milliseconds to match the raw data
+        ttk.Label(controls, text="Start time (ms)").grid(row=8, column=0, sticky="w")
+        ttk.Entry(controls, textvariable=self.start_time_var).grid(
+            row=9, column=0, sticky="ew", pady=(0, 10)
+        )
+        ttk.Label(controls, text="End time (ms)").grid(row=10, column=0, sticky="w")
+        ttk.Entry(controls, textvariable=self.end_time_var).grid(
+            row=11, column=0, sticky="ew", pady=(0, 10)
+        )
+        ttk.Button(controls, text="Clear Time Filter", command=self.clearTimeFilter).grid(
+            row=12, column=0, sticky="ew", pady=(0, 12)
+        )
         # Button for updating the graph
         ttk.Button(controls, text="Update Plot", command=self.updatePlot).grid(
-            row=8, column=0, sticky="ew", pady=(0, 12)
+            row=13, column=0, sticky="ew", pady=(0, 12)
+        )
+        ttk.Button(controls, text="Export Graph", command=self.exportGraph).grid(
+            row=14, column=0, sticky="ew", pady=(0, 12)
         )
         # Shows status messages
-        ttk.Label(controls, text="Status").grid(row=9, column=0, sticky="w")
+        ttk.Label(controls, text="Status").grid(row=15, column=0, sticky="w")
         ttk.Label(
             controls,
             textvariable=self.status_var,
             wraplength=260,
             justify="left",
-        ).grid(row=10, column=0, sticky="w", pady=(0, 12))
+        ).grid(row=16, column=0, sticky="w", pady=(0, 12))
         # Labels the summary section and creates an area for validation
         # results and summaries
-        ttk.Label(controls, text="Summaries").grid(row=11, column=0, sticky="w")
+        ttk.Label(controls, text="Summaries").grid(row=17, column=0, sticky="w")
         self.summary_text = tk.Text(controls, width=36, height=20, wrap="word")
-        self.summary_text.grid(row=12, column=0, sticky="nsew")
+        self.summary_text.grid(row=18, column=0, sticky="nsew")
         # Labels and creates a frame around the graph area
         ttk.Label(graph_area, text="Graph").grid(row=0, column=0, sticky="w")
         self.canvas_frame = ttk.Frame(graph_area)
@@ -136,12 +155,20 @@ class GrapherApp:
         metric = self.metric_var.get()
         time_unit = self.time_unit_var.get()
         smoothing_window = self.smoothing_var.get()
+        start_ms, end_ms = self._getTimeFilter()
+
+        if start_ms is None and self.start_time_var.get().strip():
+            return
+        if end_ms is None and self.end_time_var.get().strip():
+            return
 
         try:
             figure, _axis = plotMetric(
                 self.records,
                 metric,
                 time_unit=time_unit,
+                start_ms=start_ms,
+                end_ms=end_ms,
                 smoothing_window=smoothing_window,
             )
         except ValueError as error:
@@ -151,12 +178,20 @@ class GrapherApp:
         if self.current_canvas is not None:
             self.current_canvas.get_tk_widget().destroy()
 
+        self.current_figure = figure
         self.current_canvas = FigureCanvasTkAgg(figure, master=self.canvas_frame)
         self.current_canvas.draw()
         self.current_canvas.get_tk_widget().pack(fill="both", expand=True)
-
+        # Change label based on the time filter
         label = METRIC_NAMES[metric]
-        self.status_var.set(f"Showing {label} using {time_unit}.")
+        if start_ms is None and end_ms is None:
+            self.status_var.set(f"Showing {label} using {time_unit}.")
+        else:
+            self.status_var.set(
+                f"Showing {label} using {time_unit} with time filter "
+                f"{start_ms if start_ms is not None else 'start'} to "
+                f"{end_ms if end_ms is not None else 'end'} ms."
+            )
     # Upon import, the summary panel section is updated using this
     def _updateSummaryPanel(self) -> None:
         if not self.records:
@@ -197,3 +232,58 @@ class GrapherApp:
     def _setSummaryText(self, text: str) -> None:
         self.summary_text.delete("1.0", tk.END)
         self.summary_text.insert("1.0", text)
+    # Resets the time filter
+    def clearTimeFilter(self) -> None:
+        self.start_time_var.set("")
+        self.end_time_var.set("")
+        self.status_var.set("Time filter cleared.")
+        if self.records:
+            self.updatePlot()
+    # Opens a file dialog, allowing the user to save an image of the graph
+    def exportGraph(self) -> None:
+        if self.current_figure is None:
+            self.status_var.set("Create a graph before exporting.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            title="Export graph",
+            defaultextension=".png",
+            filetypes=[
+                ("PNG image", "*.png"),
+                ("JPEG image", "*.jpg"),
+                ("PDF document", "*.pdf"),
+                ("All files", "*.*"),
+            ],
+        )
+
+        if not file_path:
+            self.status_var.set("Graph export cancelled.")
+            return
+        
+        self.current_figure.savefig(file_path, bbox_inches="tight")
+        self.status_var.set(f"Graph exported to {Path(file_path).name}.")
+    # Validates and gets the time filter inputted by the user
+    def _getTimeFilter(self) -> tuple[int | None, int | None]:
+        start_text = self.start_time_var.get().strip()
+        end_text = self.end_time_var.get().strip()
+
+        try:
+            start_ms = int(start_text) if start_text else None
+            end_ms = int(end_text) if end_text else None
+        except ValueError:
+            self.status_var.set("Time filter values must be whole numbers in milliseconds.")
+            return None, None
+
+        if start_ms is not None and start_ms < 0:
+            self.status_var.set("Start time cannot be negative.")
+            return None, None
+
+        if end_ms is not None and end_ms < 0:
+            self.status_var.set("End time cannot be negative.")
+            return None, None
+
+        if start_ms is not None and end_ms is not None and start_ms > end_ms:
+            self.status_var.set("Start time must be less than or equal to end time.")
+            return None, None
+
+        return start_ms, end_ms
