@@ -32,6 +32,8 @@ UI ui(screen);
 
 unsigned long lastSensorUpdate = 0;
 unsigned long lastInteractionTime = 0;
+// The ring buffer stores the most recent raw sensor samples so the UI can
+// display a moving average without affecting what gets logged to the SD card
 SensorData recentReadings[MAX_SMOOTHING_SAMPLES]{};
 SensorData pendingDisplayData{};
 SensorData pendingLogData{};
@@ -51,7 +53,8 @@ bool getSdAvailable() {
     }
     return sdLogger.isAvailable();
 }
-// Creates the array of values to be used in the smoothed value
+
+// Adds the latest raw reading to the smoothing buffer
 void storeReading(const SensorData& data) {
     recentReadings[nextReadingIndex] = data;
     nextReadingIndex = uint8_t((nextReadingIndex + 1) % MAX_SMOOTHING_SAMPLES);
@@ -59,14 +62,13 @@ void storeReading(const SensorData& data) {
         ++recentReadingCount;
     }
 }
-// Builds the final value to be displayed using the latest sensor data and
-// how many samples to use for moving average
+
+// Builds the value used on-screen. Logged data still uses the unsmoothed sample
 SensorData buildDisplayData(const SensorData& latest, uint8_t sampleCount) {
-    // No smoothing
     if (sampleCount <= 1 || recentReadingCount == 0) {
         return latest;
     }
-    // If not enough samples for window size, use the available samples
+
     const uint8_t samplesToUse =
         sampleCount < recentReadingCount ? sampleCount : recentReadingCount;
     SensorData smoothed{};
@@ -76,7 +78,7 @@ SensorData buildDisplayData(const SensorData& latest, uint8_t sampleCount) {
     uint32_t tvocSum = 0;
     uint8_t dhtCount = 0;
     uint8_t ccsCount = 0;
-    // Updating totals
+
     for (uint8_t i = 0; i < samplesToUse; ++i) {
         const uint8_t index =
             uint8_t((nextReadingIndex + MAX_SMOOTHING_SAMPLES - 1 - i) % MAX_SMOOTHING_SAMPLES);
@@ -94,7 +96,7 @@ SensorData buildDisplayData(const SensorData& latest, uint8_t sampleCount) {
             ++ccsCount;
         }
     }
-    // Creating the smoothed values
+
     smoothed.dhtValid = dhtCount > 0;
     if (smoothed.dhtValid) {
         smoothed.temperature = temperatureSum / dhtCount;
@@ -110,7 +112,7 @@ SensorData buildDisplayData(const SensorData& latest, uint8_t sampleCount) {
     return smoothed;
 }
 }
-// Setup all components, UI and set pin modes
+
 void setup() {
     Serial.begin(9600);
     delay(200);
@@ -130,6 +132,7 @@ void setup() {
     bool sdReady = false;
 
     if (ENABLE_OLED) {
+        // Keep the OLED deselected until it is explicitly spoken to on the SPI bus
         pinMode(OLED_CS, OUTPUT);
         digitalWrite(OLED_CS, HIGH);
 
@@ -140,6 +143,7 @@ void setup() {
     }
 
     if (ENABLE_SD) {
+        // The SD card shares SPI with the OLED, so its chip select also starts high
         pinMode(SD_CS, OUTPUT);
         digitalWrite(SD_CS, HIGH);
         sdReady = sdLogger.begin(SD_CS);
@@ -257,6 +261,8 @@ void loop() {
     bool ranSensorSample = false;
     bool ranUiUpdate = false;
 
+    // Time-driven work is scheduled first, then carried out only while the user
+    // is idle so the encoder stays responsive.
     if (!sensorSamplePending && now - lastSensorUpdate >= ui.getReadingIntervalMs()) {
         sensorSamplePending = true;
     }
@@ -279,6 +285,8 @@ void loop() {
         }
     }
 
+    // Display refresh and SD writes are split into later passes so expensive work
+    // does not all land in the same loop iteration.
     if (uiUpdatePending && backgroundWindowOpen && !ranSensorSample) {
         ui.updateSensorData(pendingDisplayData);
         if (!(ENABLE_SD && ENABLE_SD_LOGGING && ui.isLoggingEnabled())) {
@@ -291,6 +299,7 @@ void loop() {
     }
 
     if (sdLogPending && backgroundWindowOpen && !ranSensorSample && !ranUiUpdate) {
+        // Deselect the OLED before talking to the SD card because both share SPI
         digitalWrite(OLED_CS, HIGH);
         const bool writeOk = sdLogger.log(pendingLogTimestamp, pendingLogData, ui.getExportFormat());
         const bool sdAvailable = getSdAvailable();

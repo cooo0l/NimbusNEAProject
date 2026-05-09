@@ -23,6 +23,8 @@ void SensorManager::begin() {
     currentData.ccsValid = false;
     currentData.dhtValid = false;
 
+    // Try both common CCS811 I2C addresses so either breakout variant can work
+    // without changing code
     ccsDetected = ccs.begin(CCS811_ADDR_PRIMARY, &Wire);
     if (ccsDetected) {
         ccsAddress = CCS811_ADDR_PRIMARY;
@@ -38,6 +40,7 @@ void SensorManager::begin() {
     }
 
     ccs.setDriveMode(CCS811_DRIVE_MODE_1SEC);
+    // The sensor needs a short warm-up before its readings are considered valid
     ccsStartupTimeMs = millis();
 }
 
@@ -62,6 +65,7 @@ void SensorManager::update() {
         return;
     }
 
+    // Skip the gas reading until the CCS811 has completed its startup period
     if (millis() - ccsStartupTimeMs < CCS811_STARTUP_DELAY_MS) {
         currentData.ccsValid = false;
         return;

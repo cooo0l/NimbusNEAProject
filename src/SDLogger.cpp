@@ -18,6 +18,7 @@ bool SDLogger::begin(uint8_t chipSelectPin) {
     available = SD.begin(chipSelectPin, SPI, SD_SPI_HZ);
     sessionFilesReady = false;
     if (available) {
+        // Each boot session gets its own log file so runs are kept separate
         sessionFilesReady = initializeSessionFiles();
         if (!sessionFilesReady) {
             available = false;
@@ -59,6 +60,8 @@ bool SDLogger::retryMount() {
     if (chipSelectPin == 0) {
         return false;
     }
+    // Remount attempts are only triggered manually from the storage screen to
+    // avoid periodic SD polling freezing the encoder/UI loop
     return begin(chipSelectPin);
 }
 // Returns the percentage of storage used
@@ -166,6 +169,7 @@ bool SDLogger::initializeSessionFiles() {
         buildSessionFilename(candidateCsv, sizeof(candidateCsv), "csv", index);
         buildSessionFilename(candidateJson, sizeof(candidateJson), "txt", index);
 
+        // Reserve the next unused pair so one boot cannot overwrite an older session.
         if (!SD.exists(candidateCsv) && !SD.exists(candidateJson)) {
             snprintf(csvFile, sizeof(csvFile), "%s", candidateCsv);
             snprintf(jsonFile, sizeof(jsonFile), "%s", candidateJson);
@@ -182,6 +186,7 @@ void SDLogger::updateUsageStats() {
         return;
     }
 
+    // Cache the percentage so the UI can read it without repeatedly touching the card
     const uint64_t total = SD.totalBytes();
     if (total == 0) {
         usedPercent = 0;

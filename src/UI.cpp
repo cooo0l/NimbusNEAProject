@@ -9,7 +9,7 @@ constexpr uint8_t INTERVAL_OPTION_COUNT =
 const unsigned long AUTO_SLEEP_OPTIONS_MS[] = {0UL, 15000UL, 30000UL, 60000UL};
 constexpr uint8_t AUTO_SLEEP_OPTION_COUNT =
     sizeof(AUTO_SLEEP_OPTIONS_MS) / sizeof(AUTO_SLEEP_OPTIONS_MS[0]);
-// Summarises CO2
+
 const char* co2Summary(uint16_t co2, bool valid) {
     if (!valid) {
         return "--";
@@ -22,7 +22,7 @@ const char* co2Summary(uint16_t co2, bool valid) {
     }
     return "Poor";
 }
-// Summarises overall air quality
+
 const char* overallAirQuality(uint16_t co2, uint16_t tvoc, bool valid) {
     if (!valid) {
         return "--";
@@ -35,7 +35,7 @@ const char* overallAirQuality(uint16_t co2, uint16_t tvoc, bool valid) {
     }
     return "Poor";
 }
-// Summarises TVOC
+
 const char* tvocSummary(uint16_t tvoc, bool valid) {
     if (!valid) {
         return "--";
@@ -48,7 +48,7 @@ const char* tvocSummary(uint16_t tvoc, bool valid) {
     }
     return "Poor";
 }
-// Summarises temperature
+
 const char* temperatureSummary(float temperatureC, bool valid) {
     if (!valid) {
         return "--";
@@ -61,7 +61,7 @@ const char* temperatureSummary(float temperatureC, bool valid) {
     }
     return "High";
 }
-// Summarises humidity
+
 const char* humiditySummary(float humidity, bool valid) {
     if (!valid) {
         return "--";
@@ -110,8 +110,8 @@ void UI::updateStorageStatus(bool sdAvailable, bool writeAttempted, bool lastWri
         renderCurrentScreen();
     }
 }
-// Uses the rotary encoders delta to determine
-// which menu item is selected
+
+// Each screen owns its own cursor so returning to a screen preserves the last selection
 void UI::moveSelection(int delta) {
     if (delta == 0) {
         return;
@@ -187,7 +187,7 @@ void UI::moveSelection(int delta) {
         return;
     }
 }
-// Determines the next screen using the output of the rotary encoder
+
 void UI::select() {
     if (currentScreen == Screen::MainMenu) {
         switch (selectedMenuIndex) {
@@ -344,6 +344,7 @@ bool UI::isPowerSavingEnabled() const {
 
 unsigned long UI::getReadingIntervalMs() const {
     unsigned long interval = INTERVAL_OPTIONS_MS[selectedIntervalIndex];
+    // Power saving only clamps settings that are currently more expensive
     if (powerSavingEnabled && interval < 15000UL) {
         interval = 15000UL;
     }
@@ -446,6 +447,8 @@ void UI::renderMainMenu() {
 void UI::renderSensorData() {
     display.firstPage();
     do {
+        // Power saving forces the lighter-weight summary layout regardless of the
+        // user's normal display preference
         if (powerSavingEnabled || displayMode == DisplayMode::Summary) {
             display.drawFrame(41, 2, 48, 16);
             display.drawText(48, 13, "Summary");
@@ -563,7 +566,9 @@ void UI::renderDisplaySettings() {
 void UI::renderPowerSaving() {
     char intervalText[12];
     char sleepText[12];
-    // Gets the status of each setting
+
+    // Show the effective settings, not just the stored preferences, so the user
+    // can see what power saving is currently overriding
     snprintf(intervalText, sizeof(intervalText), "%lus", getReadingIntervalMs() / 1000UL);
     if (getAutoSleepTimeoutMs() == 0) {
         snprintf(sleepText, sizeof(sleepText), "Off");
@@ -573,7 +578,6 @@ void UI::renderPowerSaving() {
 
     display.firstPage();
     do { 
-        // Creates the whole screen 
         display.drawFrame(24, 0, 80, 16);
         display.drawText(31, 12, "Power Saving");
 
@@ -601,12 +605,12 @@ void UI::renderReadingInterval() {
     do {
         char intervalText[16];
         char smoothingText[16];
-        // Formatting and copying strings into arrays intervalText and smoothingText
+
         snprintf(intervalText, sizeof(intervalText), "%lus",
                  INTERVAL_OPTIONS_MS[selectedIntervalIndex] / 1000UL);
         snprintf(smoothingText, sizeof(smoothingText), smoothingSampleCount == 1 ? "%u Sample": "%u Samples",
                  smoothingSampleCount);
-        // Drawing all the necessary text on the screen along with title of the screen
+
         display.drawFrame(22, 0, 84, 16);
         display.drawText(28, 12, "Reading Control");
         display.drawText(2, 36, selectedIntervalItem == 0 ? "> Interval:" : "  Interval:");
@@ -616,20 +620,17 @@ void UI::renderReadingInterval() {
         display.drawText(94, 64, selectedIntervalItem == 2 ? "> Back" : "  Back");
     } while (display.nextPage());
 }
-// Renders the settings page
+
 void UI::renderUnitSettings() {
     display.firstPage();
     do {
-        // Render title
         display.drawFrame(34, 0, 62, 16);
         display.drawText(50, 12, "Units");
-        // Render options
         display.drawText(2, 36, selectedUnitsItem == 0 ? "> Temp:" : "  Temp:");
         display.drawText(2, 50, selectedUnitsItem == 1 ? "> Humid:" : "  Humid:");
         display.drawText(64, 36, selectedUnitsItem == 2 ? "> CO2:" : "  CO2:");
         display.drawText(64, 50, selectedUnitsItem == 3 ? "> TVOC:" : "  TVOC:");
         display.drawText(94, 64, selectedUnitsItem == 4 ? "> Back" : "  Back");
-        // Render unit
         display.drawText(44, 36,
                          temperatureUnit == TemperatureUnit::Fahrenheit ? "F" : "C");
         display.drawText(44, 50,
@@ -647,6 +648,8 @@ void UI::renderDataAndStorage() {
         (static_cast<uint16_t>(displayPercent) * barWidth) / 100U);
 
     if (sdAvailable) {
+        // Build the percentage label manually because the selected font has been
+        // inconsistent when rendering the percent sign via format strings
         snprintf(storagePercentText, sizeof(storagePercentText), "%u", storagePercent);
         const size_t length = strlen(storagePercentText);
         if (length + 1 < sizeof(storagePercentText)) {

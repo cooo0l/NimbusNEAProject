@@ -49,7 +49,7 @@ void RotaryEncoder::update() {
         }
     }
 
-    // Re-arm after a stable release.
+    // Re-arm after a stable release
     if (!buttonArmed && lastSW == LOW && currentButtonState == HIGH) {
         if (now - lastButtonTime > 50) {
             buttonArmed = true;
